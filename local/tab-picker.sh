@@ -9,11 +9,12 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get the title of the underlying window (not the overlay itself)
-_get_focused_title() {
+# Get info about the underlying window (not the overlay itself)
+_get_focused_window() {
     kitten @ ls | jq -r '
       .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-      (.windows[] | select(.is_self == false) | .title) // .title
+      (.windows[] | select(.is_self == false)) // .windows[0] |
+      "\(.title)|\(.cwd)"
     '
 }
 
@@ -79,7 +80,9 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 # Main flow
-focused_title=$(_get_focused_title)
+window_info=$(_get_focused_window)
+focused_title="${window_info%%|*}"
+focused_cwd="${window_info#*|}"
 
 is_remote=0
 if _is_remote "$focused_title"; then
@@ -98,7 +101,8 @@ if [[ "$is_remote" == "1" ]]; then
     main_repo=$(ssh "$CLUSTER" "git -C '$repo' worktree list --porcelain" 2>/dev/null \
       | awk '/^worktree /{print $2; exit}')
 else
-    repo=$(git rev-parse --show-toplevel 2>/dev/null) || repo=""
+    # Use cwd from focused window for local tabs
+    repo=$(git -C "$focused_cwd" rev-parse --show-toplevel 2>/dev/null) || repo=""
     if [[ -z "$repo" ]]; then
         echo "Not in a git repo"
         read -n1 -p "Press any key..."
