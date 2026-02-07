@@ -135,7 +135,7 @@ script_path="${BASH_SOURCE[0]}"
 set +e
 result=$(echo "$list" | fzf --reverse --prompt='worktree> ' \
   --delimiter='|' --with-nth=1 \
-  --header="Enter: go | Alt+Enter: new [branch@base or #PR] | Ctrl+D: delete" \
+  --header="Enter: go | Alt+Enter: new [branch@base, branch@#PR, or #PR] | Ctrl+D: delete" \
   --print-query --expect=alt-enter,enter \
   --bind "ctrl-d:execute-silent($script_path --delete '$is_remote' '$main_repo' {2} {1})+reload($script_path --list '$is_remote' '$main_repo')")
 fzf_exit=$?
@@ -177,6 +177,29 @@ _go() {
 _create_worktree() {
     local branch="$1" base="${2:-origin/main}"
     local wt_path="$(dirname "$main_repo")/$(basename "$main_repo")-${branch//[\/.]/-}"
+
+    # Resolve PR number to branch if base is #NNN
+    if [[ "$base" == "#"* ]]; then
+        local pr_number="${base#\#}"
+        local pr_branch
+        if [[ "$is_remote" == "1" ]]; then
+            pr_branch=$(ssh "$CLUSTER" "cd '$main_repo' && gh pr view '$pr_number' --json headRefName -q '.headRefName'" 2>/dev/null)
+        else
+            pr_branch=$(gh pr view "$pr_number" --json headRefName -q '.headRefName' -R "$(git -C "$main_repo" remote get-url origin)" 2>/dev/null)
+        fi
+        if [[ -z "$pr_branch" ]]; then
+            echo "Could not find PR #$pr_number"
+            read -n1 -p "Press any key..."
+            return 1
+        fi
+        # Fetch the PR branch and use it as base
+        if [[ "$is_remote" == "1" ]]; then
+            ssh "$CLUSTER" "git -C '$main_repo' fetch origin '$pr_branch'"
+        else
+            git -C "$main_repo" fetch origin "$pr_branch"
+        fi
+        base="origin/$pr_branch"
+    fi
 
     if [[ "$is_remote" == "1" ]]; then
         ssh "$CLUSTER" "git -C '$main_repo' worktree add -b '$branch' '$wt_path' '$base'"
