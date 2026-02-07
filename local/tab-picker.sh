@@ -59,11 +59,7 @@ if [[ "${1:-}" == "--delete" ]]; then
     fi
 
     # Close any tabs with this worktree
-    if [[ "$is_remote" == "1" ]]; then
-        kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
-    else
-        kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
-    fi
+    kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
 
     # Remove worktree and branch
     if [[ "$is_remote" == "1" ]]; then
