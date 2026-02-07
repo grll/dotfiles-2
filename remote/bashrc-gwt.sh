@@ -6,12 +6,15 @@ __set_title() {
     printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
 }
 
-# Append to PROMPT_COMMAND safely (avoid double semicolons)
+# Append to PROMPT_COMMAND safely
 if [[ -z "$PROMPT_COMMAND" ]]; then
     PROMPT_COMMAND="__set_title"
 elif [[ "$PROMPT_COMMAND" != *"__set_title"* ]]; then
-    PROMPT_COMMAND="__set_title;${PROMPT_COMMAND%;}"
+    PROMPT_COMMAND="__set_title;${PROMPT_COMMAND}"
 fi
+
+# Clean up any double semicolons from other scripts (pure.bash + zoxide issue)
+PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
 
 # ── vsc: open VS Code (works locally and remotely) ──
 vsc() {
