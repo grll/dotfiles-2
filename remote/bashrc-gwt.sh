@@ -6,7 +6,12 @@ __set_title() {
     printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
 }
 
-PROMPT_COMMAND="__set_title${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+# Append to PROMPT_COMMAND safely (avoid double semicolons)
+if [[ -z "$PROMPT_COMMAND" ]]; then
+    PROMPT_COMMAND="__set_title"
+elif [[ "$PROMPT_COMMAND" != *"__set_title"* ]]; then
+    PROMPT_COMMAND="__set_title;${PROMPT_COMMAND%;}"
+fi
 
 # ── vsc: open VS Code (works locally and remotely) ──
 vsc() {
