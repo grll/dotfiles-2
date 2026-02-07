@@ -12,18 +12,16 @@ window_info=$(kitten @ ls | jq -r '
 ')
 
 focused_title="${window_info%%|*}"
-remote_cwd_b64="${window_info#*|}"
+remote_cwd="${window_info#*|}"
 
 # Detect remote context from tab title
 if [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
-    # Remote: get CWD from user variable (base64 encoded)
-    if [[ -n "$remote_cwd_b64" ]]; then
-        remote_path=$(echo "$remote_cwd_b64" | base64 -d)
-    else
+    # Remote: get CWD from user variable (already decoded by kitty)
+    if [[ -z "$remote_cwd" ]]; then
         # Fallback: prompt will update title on first command
-        remote_path="~"
+        remote_cwd="~"
     fi
-    kitten @ launch --type=tab -- kitten ssh "$CLUSTER" -t "cd '$remote_path' && exec \$SHELL -l"
+    kitten @ launch --type=tab -- kitten ssh "$CLUSTER" -t "cd '$remote_cwd' && exec \$SHELL -l"
 else
     # Local: create new tab in current directory
     kitten @ launch --type=tab --cwd=current

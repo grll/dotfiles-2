@@ -95,7 +95,7 @@ window_info=$(_get_focused_window)
 focused_title="${window_info%%|*}"
 rest="${window_info#*|}"
 focused_cwd="${rest%%|*}"
-remote_cwd_b64="${rest#*|}"
+remote_cwd="${rest#*|}"
 
 is_remote=0
 if _is_remote "$focused_title"; then
@@ -104,10 +104,8 @@ fi
 
 # Get repo from current context
 if [[ "$is_remote" == "1" ]]; then
-    # Get CWD from user variable (base64 encoded)
-    if [[ -n "$remote_cwd_b64" ]]; then
-        remote_cwd=$(echo "$remote_cwd_b64" | base64 -d)
-    else
+    # Get CWD from user variable (already decoded by kitty)
+    if [[ -z "$remote_cwd" ]]; then
         # Fallback for tabs without user variable
         remote_cwd="$HOME"
     fi
