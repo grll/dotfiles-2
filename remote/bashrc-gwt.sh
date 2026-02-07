@@ -16,6 +16,12 @@ fi
 # Clean up any double semicolons from other scripts (pure.bash + zoxide issue)
 PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
 
+# ── Zoxide + Kitty integration ────────────────────────
+# Wrap z to ensure Kitty CWD update via OSC 7
+z() {
+    __zoxide_z "$@" && builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
+}
+
 # ── vsc: open VS Code (works locally and remotely) ──
 vsc() {
     local dir="${1:-$(pwd)}"
@@ -31,8 +37,16 @@ vsc() {
     fi
 }
 
-# ── Command shortcuts ─────────────────────────────────
-alias cld='claude'
+# ── Claude Code with tab identification ───────────────
+cld() {
+    # Set user variable to identify this as a Claude Code tab
+    printf '\033]1337;SetUserVar=claude_code=%s\007' "$(printf '1' | base64)"
+    # Set tab title
+    printf '\033]1;Claude Code\007'
+    claude "$@"
+    # Clear the variable when Claude exits
+    printf '\033]1337;SetUserVar=claude_code\007'
+}
 
 # ── notify: send macOS notification via kitty remote control ──
 notify() {

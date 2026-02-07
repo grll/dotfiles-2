@@ -60,9 +60,9 @@ if [[ "${1:-}" == "--delete" ]]; then
 
     # Close any tabs with this worktree
     if [[ "$is_remote" == "1" ]]; then
-        kitten @ close-tab --match "title:^${CLUSTER}:.*${name}$" 2>/dev/null || true
+        kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
     else
-        kitten @ close-tab --match "cwd:$path" 2>/dev/null || true
+        kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
     fi
 
     # Remove worktree and branch
@@ -133,13 +133,11 @@ sel_path=$(cut -d'|' -f2 <<< "$selection")
 _go() {
     local path="$1" title="$2"
     if [[ "$is_remote" == "1" ]]; then
-        # Try exact match first, then with trailing slash for subdirectories
-        kitten @ focus-tab --match "title:${CLUSTER}:${path}\$" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}/" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+        kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
-        kitten @ focus-tab --match "cwd:$path" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "$title" --cwd="$path"
+        kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ launch --type=tab --tab-title "$title" --var "worktree=$path" --cwd="$path"
     fi
 }
 
