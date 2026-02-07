@@ -31,6 +31,9 @@ vsc() {
     fi
 }
 
+# ── Command shortcuts ─────────────────────────────────
+alias cld='claude'
+
 # ── notify: send macOS notification via kitty remote control ──
 notify() {
     local msg="${*:-Done}"

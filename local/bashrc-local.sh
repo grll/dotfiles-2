@@ -15,3 +15,9 @@ gwt() {
 }
 
 [[ -f "$HOME/.local/share/gwt/gwt-completion.bash" ]] && source "$HOME/.local/share/gwt/gwt-completion.bash"
+
+# ── SSH shortcuts ─────────────────────────────────────
+alias rno='kitten ssh rno'
+
+# ── Command shortcuts ─────────────────────────────────
+alias cld='claude'
