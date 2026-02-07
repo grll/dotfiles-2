@@ -2,7 +2,7 @@
 # Simplified worktree picker for kitty
 # - Shows worktrees only (the unit of work)
 # - Enter: focus existing tab or create tab for worktree
-# - Alt+Enter: create new worktree (supports branch@base syntax)
+# - Alt+Enter: create new worktree (supports branch@base, or #PR syntax)
 # - Ctrl+D: delete selected worktree (stays in picker for batch delete)
 
 set -euo pipefail
@@ -118,7 +118,7 @@ script_path="${BASH_SOURCE[0]}"
 set +e
 result=$(echo "$list" | fzf --reverse --prompt='worktree> ' \
   --delimiter='|' --with-nth=1 \
-  --header="Enter: go | Alt+Enter: new | Ctrl+D: delete" \
+  --header="Enter: go | Alt+Enter: new [branch@base or #PR] | Ctrl+D: delete" \
   --print-query --expect=alt-enter,enter \
   --bind "ctrl-d:execute-silent($script_path --delete '$is_remote' '$main_repo' {2} {1})+reload($script_path --list '$is_remote' '$main_repo')")
 fzf_exit=$?
@@ -133,7 +133,9 @@ sel_path=$(cut -d'|' -f2 <<< "$selection")
 _go() {
     local path="$1" title="$2"
     if [[ "$is_remote" == "1" ]]; then
-        kitten @ focus-tab --match "title:^${CLUSTER}:.*${title}" 2>/dev/null \
+        # Try exact match first, then with trailing slash for subdirectories
+        kitten @ focus-tab --match "title:${CLUSTER}:${path}\$" 2>/dev/null \
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}/" 2>/dev/null \
           || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         kitten @ focus-tab --match "cwd:$path" 2>/dev/null \
@@ -155,8 +157,43 @@ _create_worktree() {
     _go "$wt_path" "${branch//[\/.]/-}"
 }
 
+_checkout_pr() {
+    local pr_number="$1"
+    local branch
+
+    # Get branch name from PR
+    if [[ "$is_remote" == "1" ]]; then
+        branch=$(ssh "$CLUSTER" "cd '$main_repo' && gh pr view '$pr_number' --json headRefName -q '.headRefName'" 2>/dev/null)
+    else
+        branch=$(gh pr view "$pr_number" --json headRefName -q '.headRefName' -R "$(git -C "$main_repo" remote get-url origin)" 2>/dev/null)
+    fi
+
+    if [[ -z "$branch" ]]; then
+        echo "Could not find PR #$pr_number"
+        read -n1 -p "Press any key..."
+        return 1
+    fi
+
+    local wt_path="$(dirname "$main_repo")/$(basename "$main_repo")-${branch//[\/.]/-}"
+
+    # Fetch and create worktree tracking the remote branch
+    if [[ "$is_remote" == "1" ]]; then
+        ssh "$CLUSTER" "git -C '$main_repo' fetch origin '$branch'"
+        ssh "$CLUSTER" "git -C '$main_repo' worktree add '$wt_path' 'origin/$branch'"
+        ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
+    else
+        git -C "$main_repo" fetch origin "$branch"
+        git -C "$main_repo" worktree add "$wt_path" "origin/$branch"
+        [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
+    fi
+    _go "$wt_path" "${branch//[\/.]/-}"
+}
+
 if [[ "$key" == "alt-enter" && -n "$query" ]]; then
-    if [[ "$query" == *@* ]]; then
+    if [[ "$query" == "#"* ]]; then
+        # PR number: #123
+        _checkout_pr "${query#\#}"
+    elif [[ "$query" == *@* ]]; then
         _create_worktree "${query%%@*}" "${query#*@}"
     else
         _create_worktree "$query"
