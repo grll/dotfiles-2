@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG="${HOME}/dotfiles/config.sh"
+[[ -f "$CONFIG" ]] || { echo "error: $CONFIG not found — cp config.example.sh config.sh and edit it"; exit 1; }
+source "$CONFIG"
+
+# ── helpers ──────────────────────────────────────────
+
+_sanitize() { echo "${1//[\/.]/-}"; }
+
+_worktree_path() {
+    echo "$(dirname "$REMOTE_REPO")/$(basename "$REMOTE_REPO")-$(_sanitize "$1")"
+}
+
+# ── mode: remote (SSH+tmux) vs local ────────────────
+
+if [[ -n "${SSH_CONNECTION:-}" ]] && command -v tmux &>/dev/null; then
+    _enter() {
+        local session="$1" wt="$2"
+        if ! tmux has-session -t "$session" 2>/dev/null; then
+            tmux new-session -d -s "$session" -c "$wt"
+        fi
+        if [[ -n "${TMUX:-}" ]]; then
+            tmux switch-client -t "$session"
+        else
+            tmux attach -t "$session"
+        fi
+    }
+    _MODE=remote
+else
+    _enter() { echo "$2"; }
+    _MODE=local
+fi
+
+# ── commands ─────────────────────────────────────────
+
+_pick() {
+    if ! command -v fzf &>/dev/null; then
+        _ls
+        return
+    fi
+
+    if [[ "$_MODE" == remote ]]; then
+        local sessions
+        sessions="$(tmux list-sessions -F '#S' 2>/dev/null)" || { echo "no tmux sessions"; return 1; }
+
+        local picked
+        picked="$(echo "$sessions" | fzf --height=~50% --reverse --prompt='session> ')" || return 0
+
+        _enter "$picked" ""
+    else
+        local branches
+        branches="$(
+            git -C "$REMOTE_REPO" worktree list --porcelain 2>/dev/null \
+                | grep '^worktree ' | sed 's|^worktree ||' \
+                | grep -v "^${REMOTE_REPO}$" \
+                | while read -r p; do
+                    basename "$p" | sed "s|^$(basename "$REMOTE_REPO")-||"
+                done
+        )"
+        [[ -z "$branches" ]] && { echo "no worktrees" >&2; return 1; }
+
+        local picked
+        picked="$(echo "$branches" | fzf --height=~50% --reverse --prompt='worktree> ')" || return 0
+
+        _go "$picked"
+    fi
+}
+
+_go() {
+    local branch="$1"
+    local session
+    session="$(_sanitize "$branch")"
+    local wt
+    wt="$(_worktree_path "$branch")"
+
+    if [[ ! -d "$wt" ]]; then
+        echo "error: no worktree for '$branch'" >&2
+        echo "  existing:" >&2
+        git -C "$REMOTE_REPO" worktree list --porcelain \
+            | grep '^worktree ' | sed "s|^worktree ||" | grep -v "^${REMOTE_REPO}$" \
+            | while read -r p; do echo "    $(basename "$p" | sed "s|^$(basename "$REMOTE_REPO")-||")"; done >&2
+        echo "  create with: gwt -b $branch" >&2
+        return 1
+    fi
+
+    _enter "$session" "$wt"
+}
+
+_new() {
+    local branch="$1"
+    local base="${2:-origin/main}"
+    local session
+    session="$(_sanitize "$branch")"
+    local wt
+    wt="$(_worktree_path "$branch")"
+
+    if [[ -d "$wt" ]]; then
+        echo "worktree already exists, switching" >&2
+        _go "$branch"
+        return
+    fi
+
+    git -C "$REMOTE_REPO" fetch origin "${base#origin/}" 2>/dev/null || true
+    git -C "$REMOTE_REPO" worktree add -b "$branch" "$wt" "$base"
+
+    [[ -d "$REMOTE_REPO/.venv" ]] && ln -s "$REMOTE_REPO/.venv" "$wt/.venv"
+    [[ -d "$REMOTE_REPO/.claude" ]] && ln -s "$REMOTE_REPO/.claude" "$wt/.claude"
+
+    _enter "$session" "$wt"
+}
+
+_rm() {
+    local branch="$1"
+    local session
+    session="$(_sanitize "$branch")"
+    local wt
+    wt="$(_worktree_path "$branch")"
+
+    if [[ "$_MODE" == remote ]]; then
+        if [[ -n "${TMUX:-}" ]]; then
+            local current
+            current="$(tmux display-message -p '#S')"
+            if [[ "$current" == "$session" ]]; then
+                tmux switch-client -t main 2>/dev/null \
+                    || tmux switch-client -n 2>/dev/null \
+                    || { echo "error: can't switch away, kill other sessions first"; return 1; }
+            fi
+        fi
+        tmux kill-session -t "$session" 2>/dev/null && echo "killed session: $session"
+    fi
+
+    if [[ -d "$wt" ]]; then
+        git -C "$REMOTE_REPO" worktree remove "$wt" --force
+        echo "removed worktree: $wt"
+    fi
+}
+
+_ls() {
+    echo "worktrees:"
+    git -C "$REMOTE_REPO" worktree list
+    if [[ "$_MODE" == remote ]]; then
+        echo ""
+        echo "sessions:"
+        tmux list-sessions 2>/dev/null || echo "  (none)"
+    fi
+}
+
+# ── dispatch ─────────────────────────────────────────
+
+case "${1:-}" in
+    "")
+        _pick
+        ;;
+    -b)
+        shift
+        [[ $# -lt 1 ]] && { echo "usage: gwt -b <branch> [base]"; exit 1; }
+        _new "$@"
+        ;;
+    -d)
+        shift
+        [[ $# -lt 1 ]] && { echo "usage: gwt -d <branch>"; exit 1; }
+        _rm "$1"
+        ;;
+    -l)
+        _ls
+        ;;
+    -h|--help)
+        cat <<EOF
+gwt                     pick session/worktree (fzf)
+gwt <branch>            go to existing worktree
+gwt -b <branch> [base]  create new (default base: origin/main)
+gwt -d <branch>         remove worktree + session
+gwt -l                  list worktrees + sessions
+EOF
+        ;;
+    -*)
+        echo "unknown flag: $1"
+        exit 1
+        ;;
+    *)
+        _go "$1"
+        ;;
+esac
