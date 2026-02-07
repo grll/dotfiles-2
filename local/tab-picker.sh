@@ -162,9 +162,10 @@ _go() {
         smart_title=$(_format_branch "${branch:-$name}")
 
         # Try var:worktree first, then fall back to title matching by branch pattern
+        # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
           || kitten @ focus-tab --match "title:^${CLUSTER}:${smart_title}" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${smart_title}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+          || kitten @ launch --type=tab --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         # Try var:worktree first, then fall back to cwd matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
