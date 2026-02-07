@@ -4,6 +4,8 @@
 # ── terminal title: cluster:path (for worktree picker integration) ──
 __set_title() {
     printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
+    # Emit OSC 7 for Kitty CWD tracking (works with zoxide z)
+    builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
 }
 
 # Append to PROMPT_COMMAND safely
@@ -15,18 +17,6 @@ fi
 
 # Clean up any double semicolons from other scripts (pure.bash + zoxide issue)
 PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
-
-# ── Zoxide + Kitty integration ────────────────────────
-# Wrap z to ensure Kitty CWD update via OSC 7
-z() {
-    echo "DEBUG z called with args: $*" >> /tmp/z-debug.log
-    echo "DEBUG __zoxide_z exists: $(type -t __zoxide_z 2>&1)" >> /tmp/z-debug.log
-    __zoxide_z "$@" 2>> /tmp/z-debug.log
-    local ret=$?
-    echo "DEBUG __zoxide_z returned: $ret, PWD=$PWD" >> /tmp/z-debug.log
-    builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
-    return $ret
-}
 
 # ── vsc: open VS Code (works locally and remotely) ──
 vsc() {
