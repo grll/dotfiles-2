@@ -4,17 +4,26 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get the title of the current window (not overlay)
-focused_title=$(kitten @ ls | jq -r '
+# Get window info from focused tab
+window_info=$(kitten @ ls | jq -r '
   .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-  (.windows[] | select(.is_self == false) | .title) // .title
+  (.windows[] | select(.is_self == false)) // .windows[0] |
+  "\(.title)|\(.user_vars.remote_cwd // "")"
 ')
+
+focused_title="${window_info%%|*}"
+remote_cwd_b64="${window_info#*|}"
 
 # Detect remote context from tab title
 if [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
-    # Remote: extract path from title and launch new SSH tab
-    remote_path="${focused_title#${CLUSTER}:}"
-    kitten @ launch --type=tab --tab-title "${CLUSTER}:${remote_path}" -- kitten ssh "$CLUSTER" -t "cd '$remote_path' && exec \$SHELL -l"
+    # Remote: get CWD from user variable (base64 encoded)
+    if [[ -n "$remote_cwd_b64" ]]; then
+        remote_path=$(echo "$remote_cwd_b64" | base64 -d)
+    else
+        # Fallback: prompt will update title on first command
+        remote_path="~"
+    fi
+    kitten @ launch --type=tab -- kitten ssh "$CLUSTER" -t "cd '$remote_path' && exec \$SHELL -l"
 else
     # Local: create new tab in current directory
     kitten @ launch --type=tab --cwd=current

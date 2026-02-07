@@ -1,9 +1,82 @@
 # ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
-# ── terminal title: cluster:path (for worktree picker integration) ──
+# ── PR cache for tab titles ──
+__pr_cache_dir="$HOME/.cache/tab-title"
+__pr_cache_stale=300  # 5 minutes
+
+__get_pr_number() {
+    local branch="$1" cache_file="$__pr_cache_dir/$branch"
+
+    # Check cache
+    if [[ -f "$cache_file" ]]; then
+        local age=$(( $(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null) ))
+        local pr_num=$(cat "$cache_file")
+
+        # Refresh in background if stale
+        if (( age > __pr_cache_stale )); then
+            ( __refresh_pr_cache "$branch" & ) 2>/dev/null
+        fi
+
+        [[ -n "$pr_num" && "$pr_num" != "0" ]] && echo "$pr_num"
+        return
+    fi
+
+    # No cache - trigger async fetch
+    ( __refresh_pr_cache "$branch" & ) 2>/dev/null
+}
+
+__refresh_pr_cache() {
+    local branch="$1"
+    mkdir -p "$__pr_cache_dir"
+    local pr_num=$(gh pr view "$branch" --json number -q '.number' 2>/dev/null || echo "0")
+    echo "$pr_num" > "$__pr_cache_dir/$branch"
+}
+
+# ── Smart title: cluster:branch #PR or cluster:~/path ──
+__format_branch() {
+    local branch="$1"
+    # Strip user/ prefix if present
+    branch="${branch#*/}"
+    # Check for Linear ticket pattern (e.g., sol-3295-description)
+    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]^^}"  # Uppercase ticket ID
+    else
+        echo "$branch"
+    fi
+}
+
 __set_title() {
-    printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
+    local cluster="${CLUSTER:-${HOSTNAME%%.*}}"
+    local title=""
+
+    # Set remote_cwd user variable for local scripts to read
+    printf '\033]1337;SetUserVar=remote_cwd=%s\007' "$(printf '%s' "$PWD" | base64)"
+
+    # Check if in git repo
+    local git_root branch
+    git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+    if [[ -n "$git_root" ]]; then
+        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+        if [[ "$branch" == "HEAD" ]]; then
+            # Detached HEAD - show repo name
+            title=$(basename "$git_root")
+        else
+            # Format branch name
+            title=$(__format_branch "$branch")
+
+            # Add PR number if cached
+            local pr_num=$(__get_pr_number "$branch")
+            [[ -n "$pr_num" ]] && title="$title #$pr_num"
+        fi
+    else
+        # Not in git - show abbreviated path
+        title="${PWD/#$HOME/\~}"
+    fi
+
+    printf '\033]0;%s:%s\007' "$cluster" "$title"
     # Emit OSC 7 for Kitty CWD tracking (works with zoxide z)
     builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
 }

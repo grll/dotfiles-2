@@ -14,8 +14,19 @@ _get_focused_window() {
     kitten @ ls | jq -r '
       .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
       (.windows[] | select(.is_self == false)) // .windows[0] |
-      "\(.title)|\(.cwd)"
+      "\(.title)|\(.cwd)|\(.user_vars.remote_cwd // "")"
     '
+}
+
+# Format branch for smart title (same logic as bashrc-gwt.sh)
+_format_branch() {
+    local branch="$1"
+    branch="${branch#*/}"  # Strip user/ prefix
+    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]^^}"
+    else
+        echo "$branch"
+    fi
 }
 
 # Detect if we're in remote context
@@ -82,7 +93,9 @@ fi
 # Main flow
 window_info=$(_get_focused_window)
 focused_title="${window_info%%|*}"
-focused_cwd="${window_info#*|}"
+rest="${window_info#*|}"
+focused_cwd="${rest%%|*}"
+remote_cwd_b64="${rest#*|}"
 
 is_remote=0
 if _is_remote "$focused_title"; then
@@ -91,7 +104,13 @@ fi
 
 # Get repo from current context
 if [[ "$is_remote" == "1" ]]; then
-    remote_cwd="${focused_title#${CLUSTER}:}"
+    # Get CWD from user variable (base64 encoded)
+    if [[ -n "$remote_cwd_b64" ]]; then
+        remote_cwd=$(echo "$remote_cwd_b64" | base64 -d)
+    else
+        # Fallback for tabs without user variable
+        remote_cwd="$HOME"
+    fi
     repo=$(ssh "$CLUSTER" "cd '$remote_cwd' 2>/dev/null && git rev-parse --show-toplevel" 2>/dev/null) || repo=""
     if [[ -z "$repo" ]]; then
         echo "Not in a git repo on remote"
@@ -131,18 +150,23 @@ selection=$(sed -n '3p' <<< "$result")
 sel_path=$(cut -d'|' -f2 <<< "$selection")
 
 _go() {
-    local path="$1" title="$2"
+    local path="$1" name="$2"
+    local branch smart_title
+
     if [[ "$is_remote" == "1" ]]; then
-        # Try var:worktree first, then fall back to title matching for manually-created tabs
+        # Get branch for smart title and matching
+        branch=$(ssh "$CLUSTER" "git -C '$path' rev-parse --abbrev-ref HEAD" 2>/dev/null) || branch=""
+        smart_title=$(_format_branch "${branch:-$name}")
+
+        # Try var:worktree first, then fall back to title matching by branch pattern
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}$" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}/" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${smart_title}" 2>/dev/null \
+          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${smart_title}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         # Try var:worktree first, then fall back to cwd matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
           || kitten @ focus-tab --match "cwd:$path" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "$title" --var "worktree=$path" --cwd="$path"
+          || kitten @ launch --type=tab --tab-title "$name" --var "worktree=$path" --cwd="$path"
     fi
 }
 
