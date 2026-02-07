@@ -6,7 +6,9 @@ __pr_cache_dir="$HOME/.cache/tab-title"
 __pr_cache_stale=300  # 5 minutes
 
 __get_pr_number() {
-    local branch="$1" cache_file="$__pr_cache_dir/$branch"
+    local branch="$1"
+    # Sanitize branch name for filename (replace / with --)
+    local cache_file="$__pr_cache_dir/${branch//\//__}"
 
     # Check cache
     if [[ -f "$cache_file" ]]; then
@@ -28,9 +30,11 @@ __get_pr_number() {
 
 __refresh_pr_cache() {
     local branch="$1"
+    # Sanitize branch name for filename (replace / with --)
+    local cache_file="$__pr_cache_dir/${branch//\//__}"
     mkdir -p "$__pr_cache_dir"
     local pr_num=$(gh pr view "$branch" --json number -q '.number' 2>/dev/null || echo "0")
-    echo "$pr_num" > "$__pr_cache_dir/$branch"
+    echo "$pr_num" > "$cache_file"
 }
 
 # ── Smart title: cluster:branch #PR or cluster:~/path ──
