@@ -1,15 +1,9 @@
 # ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
-# ── terminal title: host:branch (or host:dir) ──
-__git_branch() {
-    git rev-parse --abbrev-ref HEAD 2>/dev/null
-}
-
+# ── terminal title: cluster:path (for worktree picker integration) ──
 __set_title() {
-    local branch=$(__git_branch)
-    local context="${branch:-${PWD##*/}}"
-    printf '\033]0;%s:%s\007' "${HOSTNAME%%.*}" "$context"
+    printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
 }
 
 PROMPT_COMMAND="__set_title${PROMPT_COMMAND:+;$PROMPT_COMMAND}"

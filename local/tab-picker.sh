@@ -8,22 +8,35 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get focused tab info
-focused_title=$(kitten @ ls | jq -r '.[] | select(.is_focused) | .tabs[] | select(.is_focused) | .title')
+# Get the title of the underlying window (not the overlay itself)
+# When running as overlay, is_self=true marks the overlay; we want the other window
+focused_title=$(kitten @ ls | jq -r '
+  .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
+  (.windows[] | select(.is_self == false) | .title) // .title
+')
 
-# Detect remote context from tab title
+# DEBUG
+echo "DEBUG: focused_title='$focused_title'" >> /tmp/worktree-picker.log
+echo "DEBUG: CLUSTER='${CLUSTER:-rno}'" >> /tmp/worktree-picker.log
+
+# Detect remote context from tab title (matches "kitten ssh CLUSTER" in title)
 is_remote=0
-if [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
+if [[ "$focused_title" == *"kitten ssh ${CLUSTER:-rno}"* ]] || [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
     is_remote=1
 fi
+
+echo "DEBUG: is_remote='$is_remote'" >> /tmp/worktree-picker.log
 
 # Get repo from current context (cd into repo before Cmd+G)
 if [[ "$is_remote" == "1" ]]; then
     # Extract remote cwd from title like "rno:/home/user/Projects/forge"
     remote_cwd="${focused_title#${CLUSTER}:}"
+    echo "DEBUG: remote_cwd='$remote_cwd'" >> /tmp/worktree-picker.log
     repo=$(ssh "$CLUSTER" "cd '$remote_cwd' 2>/dev/null && git rev-parse --show-toplevel" 2>/dev/null) || repo=""
+    echo "DEBUG: repo='$repo'" >> /tmp/worktree-picker.log
     if [[ -z "$repo" ]]; then
         echo "Not in a git repo on remote"
+        echo "DEBUG: title='$focused_title' cwd='$remote_cwd'"
         read -n1 -p "Press any key..."
         exit 1
     fi
