@@ -51,7 +51,8 @@ __set_title() {
     local title=""
 
     # Set remote_cwd user variable for local scripts to read
-    printf '\033]1337;SetUserVar=remote_cwd=%s\007' "$(printf '%s' "$PWD" | base64)"
+    # Use -w0 to prevent line wrapping on Linux (breaks escape sequence)
+    printf '\033]1337;SetUserVar=remote_cwd=%s\007' "$(printf '%s' "$PWD" | base64 -w0)"
 
     # Check if in git repo
     local git_root branch
