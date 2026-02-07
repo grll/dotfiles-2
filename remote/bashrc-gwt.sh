@@ -19,7 +19,13 @@ PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
 # ── Zoxide + Kitty integration ────────────────────────
 # Wrap z to ensure Kitty CWD update via OSC 7
 z() {
-    __zoxide_z "$@" && builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
+    echo "DEBUG z called with args: $*" >> /tmp/z-debug.log
+    echo "DEBUG __zoxide_z exists: $(type -t __zoxide_z 2>&1)" >> /tmp/z-debug.log
+    __zoxide_z "$@" 2>> /tmp/z-debug.log
+    local ret=$?
+    echo "DEBUG __zoxide_z returned: $ret, PWD=$PWD" >> /tmp/z-debug.log
+    builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
+    return $ret
 }
 
 # ── vsc: open VS Code (works locally and remotely) ──
