@@ -62,15 +62,26 @@ __set_title() {
         branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
         if [[ "$branch" == "HEAD" ]]; then
-            # Detached HEAD - show repo name
-            title=$(basename "$git_root")
-        else
+            # Detached HEAD - try to get tracking ref (e.g., remotes/origin/user/branch)
+            local ref=$(git describe --all --exact-match HEAD 2>/dev/null)
+            if [[ "$ref" == remotes/origin/* ]]; then
+                branch="${ref#remotes/origin/}"
+            else
+                # Fallback to repo name
+                branch=""
+            fi
+        fi
+
+        if [[ -n "$branch" ]]; then
             # Format branch name
             title=$(__format_branch "$branch")
 
             # Add PR number if cached
             local pr_num=$(__get_pr_number "$branch")
             [[ -n "$pr_num" ]] && title="$title #$pr_num"
+        else
+            # No branch info - show repo name
+            title=$(basename "$git_root")
         fi
     else
         # Not in git - show abbreviated path

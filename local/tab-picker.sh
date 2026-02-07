@@ -154,6 +154,11 @@ _go() {
     if [[ "$is_remote" == "1" ]]; then
         # Get branch for smart title and matching
         branch=$(ssh "$CLUSTER" "git -C '$path' rev-parse --abbrev-ref HEAD" 2>/dev/null) || branch=""
+        # Handle detached HEAD - get tracking ref
+        if [[ "$branch" == "HEAD" ]]; then
+            local ref=$(ssh "$CLUSTER" "git -C '$path' describe --all --exact-match HEAD 2>/dev/null") || ref=""
+            [[ "$ref" == remotes/origin/* ]] && branch="${ref#remotes/origin/}"
+        fi
         smart_title=$(_format_branch "${branch:-$name}")
 
         # Try var:worktree first, then fall back to title matching by branch pattern
