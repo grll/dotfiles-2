@@ -24,7 +24,8 @@ vsc() {
             echo "error: kitty remote control not available (use kitten ssh)" >&2
             return 1
         fi
-        kitten @ launch --type=background -- code --remote "ssh-remote+${CLUSTER}" "$dir"
+        # Use full path since kitty background doesn't have user's PATH
+        kitten @ launch --type=background -- /opt/homebrew/bin/code --remote "ssh-remote+${CLUSTER}" "$dir"
     else
         code "$dir"
     fi
