@@ -129,10 +129,15 @@ sel_path=$(cut -d'|' -f2 <<< "$selection")
 _go() {
     local path="$1" title="$2"
     if [[ "$is_remote" == "1" ]]; then
+        # Try var:worktree first, then fall back to title matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}$" 2>/dev/null \
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}/" 2>/dev/null \
           || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
+        # Try var:worktree first, then fall back to cwd matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ focus-tab --match "cwd:$path" 2>/dev/null \
           || kitten @ launch --type=tab --tab-title "$title" --var "worktree=$path" --cwd="$path"
     fi
 }
