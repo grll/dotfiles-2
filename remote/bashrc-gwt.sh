@@ -37,16 +37,8 @@ vsc() {
     fi
 }
 
-# ── Claude Code with tab identification ───────────────
-cld() {
-    # Set user variable to identify this as a Claude Code tab
-    printf '\033]1337;SetUserVar=claude_code=%s\007' "$(printf '1' | base64)"
-    # Set tab title
-    printf '\033]1;Claude Code\007'
-    claude "$@"
-    # Clear the variable when Claude exits
-    printf '\033]1337;SetUserVar=claude_code\007'
-}
+# ── Command shortcuts ─────────────────────────────────
+alias cld='claude'
 
 # ── notify: send macOS notification via kitty remote control ──
 notify() {
