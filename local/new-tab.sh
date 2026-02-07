@@ -4,19 +4,17 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get info about the current window (not overlay)
-window_info=$(kitten @ ls | jq -r '
+# Get the title of the current window (not overlay)
+focused_title=$(kitten @ ls | jq -r '
   .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-  (.windows[] | select(.is_self == false)) // .windows[0] |
-  "\(.user_vars.remote // "")|\(.title)"
+  (.windows[] | select(.is_self == false) | .title) // .title
 ')
-remote_var="${window_info%%|*}"
-focused_title="${window_info#*|}"
 
-# Detect remote context from user variable
-if [[ -n "$remote_var" ]]; then
-    # Remote: use path from title and launch new SSH tab with remote var
-    kitten @ launch --type=tab --tab-title "$focused_title" --var "remote=$remote_var" -- kitten ssh "$remote_var" -t "cd '$focused_title' && exec \$SHELL -l"
+# Detect remote context from tab title
+if [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
+    # Remote: extract path from title and launch new SSH tab
+    remote_path="${focused_title#${CLUSTER}:}"
+    kitten @ launch --type=tab --tab-title "${CLUSTER}:${remote_path}" -- kitten ssh "$CLUSTER" -t "cd '$remote_path' && exec \$SHELL -l"
 else
     # Local: create new tab in current directory
     kitten @ launch --type=tab --cwd=current

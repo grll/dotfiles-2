@@ -9,18 +9,17 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get info about the underlying window (not the overlay itself)
-_get_focused_window_info() {
+# Get the title of the underlying window (not the overlay itself)
+_get_focused_title() {
     kitten @ ls | jq -r '
       .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-      (.windows[] | select(.is_self == false)) // .windows[0] |
-      "\(.user_vars.remote // "")|\(.title)"
+      (.windows[] | select(.is_self == false) | .title) // .title
     '
 }
 
-# Detect if we're in remote context (via user variable)
+# Detect if we're in remote context
 _is_remote() {
-    [[ -n "$1" ]]
+    [[ "$1" == "${CLUSTER:-rno}:"* ]]
 }
 
 # Get worktree list
@@ -80,20 +79,16 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 # Main flow
-window_info=$(_get_focused_window_info)
-remote_var="${window_info%%|*}"
-focused_title="${window_info#*|}"
+focused_title=$(_get_focused_title)
 
 is_remote=0
-if _is_remote "$remote_var"; then
+if _is_remote "$focused_title"; then
     is_remote=1
-    CLUSTER="$remote_var"
 fi
 
 # Get repo from current context
 if [[ "$is_remote" == "1" ]]; then
-    # Title is just the path now (no cluster prefix)
-    remote_cwd="$focused_title"
+    remote_cwd="${focused_title#${CLUSTER}:}"
     repo=$(ssh "$CLUSTER" "cd '$remote_cwd' 2>/dev/null && git rev-parse --show-toplevel" 2>/dev/null) || repo=""
     if [[ -z "$repo" ]]; then
         echo "Not in a git repo on remote"
@@ -136,9 +131,9 @@ _go() {
     if [[ "$is_remote" == "1" ]]; then
         # Try var:worktree first, then fall back to title matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${path}$" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${path}/" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "$path" --var "worktree=$path" --var "remote=$CLUSTER" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}$" 2>/dev/null \
+          || kitten @ focus-tab --match "title:^${CLUSTER}:${path}/" 2>/dev/null \
+          || kitten @ launch --type=tab --tab-title "${CLUSTER}:${path}" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         # Try var:worktree first, then fall back to cwd matching for manually-created tabs
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
