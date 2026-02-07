@@ -203,17 +203,27 @@ _checkout_pr() {
 
     local wt_path="$(dirname "$main_repo")/$(basename "$main_repo")-${branch//[\/.]/-}"
 
-    # Fetch and create worktree tracking the remote branch
+    # Check if worktree already exists
+    local wt_exists=0
     if [[ "$is_remote" == "1" ]]; then
-        ssh "$CLUSTER" "git -C '$main_repo' fetch origin '$branch'"
-        ssh "$CLUSTER" "git -C '$main_repo' worktree add '$wt_path' 'origin/$branch'"
-        ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
-        ssh "$CLUSTER" "[[ -d '$main_repo/.claude' ]] && ln -s '$main_repo/.claude' '$wt_path/.claude'" || true
+        ssh "$CLUSTER" "[[ -d '$wt_path' ]]" && wt_exists=1
     else
-        git -C "$main_repo" fetch origin "$branch"
-        git -C "$main_repo" worktree add "$wt_path" "origin/$branch"
-        [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
-        [[ -d "$main_repo/.claude" ]] && ln -s "$main_repo/.claude" "$wt_path/.claude" || true
+        [[ -d "$wt_path" ]] && wt_exists=1
+    fi
+
+    # Create worktree if it doesn't exist
+    if [[ "$wt_exists" == "0" ]]; then
+        if [[ "$is_remote" == "1" ]]; then
+            ssh "$CLUSTER" "git -C '$main_repo' fetch origin '$branch'"
+            ssh "$CLUSTER" "git -C '$main_repo' worktree add '$wt_path' 'origin/$branch'"
+            ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
+            ssh "$CLUSTER" "[[ -d '$main_repo/.claude' ]] && ln -s '$main_repo/.claude' '$wt_path/.claude'" || true
+        else
+            git -C "$main_repo" fetch origin "$branch"
+            git -C "$main_repo" worktree add "$wt_path" "origin/$branch"
+            [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
+            [[ -d "$main_repo/.claude" ]] && ln -s "$main_repo/.claude" "$wt_path/.claude" || true
+        fi
     fi
     _go "$wt_path" "${branch//[\/.]/-}"
 }
