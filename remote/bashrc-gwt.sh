@@ -1,26 +1,31 @@
-# ── gwt: tmux auto-attach + completion ───────────────
+# ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
-if [ -n "$SSH_CONNECTION" ] && [ -z "$TMUX" ]; then
-    tmux attach -t main 2>/dev/null || tmux new-session -s main -c "${REMOTE_REPO:-$HOME}"
-fi
+# ── terminal title: host:branch (or host:dir) ──
+__git_branch() {
+    git rev-parse --abbrev-ref HEAD 2>/dev/null
+}
 
-[ -f "$HOME/.local/share/gwt/gwt-completion.bash" ] && source "$HOME/.local/share/gwt/gwt-completion.bash"
+__set_title() {
+    local branch=$(__git_branch)
+    local context="${branch:-${PWD##*/}}"
+    printf '\033]0;%s:%s\007' "${HOSTNAME%%.*}" "$context"
+}
 
-# ── vsc: open VS Code locally via kitty remote control ──
+PROMPT_COMMAND="__set_title${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+
+# ── vsc: open VS Code (works locally and remotely) ──
 vsc() {
-    local dir
-    if [[ $# -gt 0 ]]; then
-        local sanitized="${1//[\/.]/-}"
-        dir="$(dirname "$REMOTE_REPO")/$(basename "$REMOTE_REPO")-${sanitized}"
+    local dir="${1:-$(pwd)}"
+    if [[ -n "$SSH_CONNECTION" ]]; then
+        if ! kitten @ ls &>/dev/null; then
+            echo "error: kitty remote control not available (use kitten ssh)" >&2
+            return 1
+        fi
+        kitten @ launch --type=background -- code --remote "ssh-remote+${CLUSTER}" "$dir"
     else
-        dir="$(pwd)"
+        code "$dir"
     fi
-    if ! kitten @ ls &>/dev/null; then
-        echo "error: kitty remote control not available (use kitten ssh)" >&2
-        return 1
-    fi
-    kitten @ launch --type=background -- code --remote "ssh-remote+${CLUSTER}" "$dir"
 }
 
 # ── notify: send macOS notification via kitty remote control ──
