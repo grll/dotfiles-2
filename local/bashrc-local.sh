@@ -23,7 +23,11 @@ z() {
 }
 
 # ── SSH shortcuts ─────────────────────────────────────
-alias rno='kitten ssh rno'
+rno() {
+    # Set user variable to mark this as a remote tab
+    printf '\033]1337;SetUserVar=remote=%s\007' "$(printf 'rno' | base64)"
+    kitten ssh rno "$@"
+}
 
 # ── Command shortcuts ─────────────────────────────────
 alias cld='claude'

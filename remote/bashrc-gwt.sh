@@ -1,9 +1,12 @@
 # ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
-# ── terminal title: cluster:path (for worktree picker integration) ──
+# ── terminal title: path only, OS window shows cluster ──
 __set_title() {
-    printf '\033]0;%s:%s\007' "${CLUSTER:-${HOSTNAME%%.*}}" "$PWD"
+    # Tab title: just the path
+    printf '\033]0;%s\007' "$PWD"
+    # OS window title: cluster name
+    printf '\033]2;%s\007' "${CLUSTER:-${HOSTNAME%%.*}}"
     # Emit OSC 7 for Kitty CWD tracking (works with zoxide z)
     builtin printf '\e]7;kitty-shell-cwd://%s%s\a' "$HOSTNAME" "$PWD"
 }
