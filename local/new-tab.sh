@@ -8,14 +8,18 @@ source ~/dotfiles/config.sh 2>/dev/null || true
 window_info=$(kitten @ ls | jq -r '
   .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
   (.windows[] | select(.is_self == false)) // .windows[0] |
-  "\(.title)|\(.user_vars.remote_cwd // "")"
+  "\(.user_vars.is_remote // "")|\(.user_vars.remote_cwd // "")"
 ')
 
-focused_title="${window_info%%|*}"
+is_remote="${window_info%%|*}"
 remote_cwd="${window_info#*|}"
 
-# Detect remote context from tab title
-if [[ "$focused_title" == "${CLUSTER:-rno}:"* ]]; then
+# Fallback for legacy remote tabs (have remote_cwd but no is_remote)
+if [[ -z "$is_remote" && -n "$remote_cwd" ]]; then
+    is_remote="1"
+fi
+
+if [[ "$is_remote" == "1" ]]; then
     # Remote: get CWD from user variable (already decoded by kitty)
     if [[ -z "$remote_cwd" ]]; then
         # Fallback: prompt will update title on first command

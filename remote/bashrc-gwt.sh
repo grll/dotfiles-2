@@ -54,9 +54,10 @@ __set_title() {
     local cluster="${CLUSTER:-${HOSTNAME%%.*}}"
     local title=""
 
-    # Set remote_cwd user variable for local scripts to read
+    # Set user variables for local scripts to read
     # Use -w0 to prevent line wrapping on Linux (breaks escape sequence)
     printf '\033]1337;SetUserVar=remote_cwd=%s\007' "$(printf '%s' "$PWD" | base64 -w0)"
+    printf '\033]1337;SetUserVar=is_remote=%s\007' "$(printf '1' | base64 -w0)"
 
     # Check if in git repo
     local git_root branch

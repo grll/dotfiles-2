@@ -14,7 +14,7 @@ _get_focused_window() {
     kitten @ ls | jq -r '
       .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
       (.windows[] | select(.is_self == false)) // .windows[0] |
-      "\(.title)|\(.cwd)|\(.user_vars.remote_cwd // "")"
+      "\(.user_vars.is_remote // "")|\(.cwd)|\(.user_vars.remote_cwd // "")"
     '
 }
 
@@ -31,7 +31,7 @@ _format_branch() {
 
 # Detect if we're in remote context
 _is_remote() {
-    [[ "$1" == "${CLUSTER:-rno}:"* ]]
+    [[ "$1" == "1" ]]
 }
 
 # Get worktree list
@@ -92,13 +92,18 @@ fi
 
 # Main flow
 window_info=$(_get_focused_window)
-focused_title="${window_info%%|*}"
+is_remote_var="${window_info%%|*}"
 rest="${window_info#*|}"
 focused_cwd="${rest%%|*}"
 remote_cwd="${rest#*|}"
 
+# Fallback for legacy remote tabs (have remote_cwd but no is_remote)
+if [[ -z "$is_remote_var" && -n "$remote_cwd" ]]; then
+    is_remote_var="1"
+fi
+
 is_remote=0
-if _is_remote "$focused_title"; then
+if _is_remote "$is_remote_var"; then
     is_remote=1
 fi
 
@@ -161,10 +166,9 @@ _go() {
         fi
         smart_title=$(_format_branch "${branch:-$name}")
 
-        # Try var:worktree first, then fall back to title matching by branch pattern
+        # Try var:worktree first, then create new tab
         # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
         kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ focus-tab --match "title:^${CLUSTER}:${smart_title}" 2>/dev/null \
           || kitten @ launch --type=tab --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         # Try var:worktree first, then fall back to cwd matching for manually-created tabs
