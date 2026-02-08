@@ -32,7 +32,7 @@ fi
 # kitty session
 KITTY_DIR="$HOME/.config/kitty/sessions"
 mkdir -p "$KITTY_DIR"
-ln -sf "$DIR/kitty-work.conf" "$KITTY_DIR/work.conf"
+ln -sf "$DIR/sessions/work.conf" "$KITTY_DIR/work.conf"
 echo "✓ kitty session → $KITTY_DIR/work.conf"
 
 # gwt
@@ -72,6 +72,20 @@ echo "✓ ssh.conf → ~/.config/kitty/ssh.conf"
 rm -rf "$HOME/.claude/skills"
 ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
 echo "✓ claude skills → ~/.claude/skills"
+
+# claude code hooks (merge into existing settings)
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+HOOKS_FILE="$DIR/../claude/claude-hooks.json"
+if [[ -f "$HOOKS_FILE" ]]; then
+    mkdir -p "$HOME/.claude"
+    if [[ -f "$CLAUDE_SETTINGS" ]]; then
+        jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$HOOKS_FILE" > "$CLAUDE_SETTINGS.tmp"
+        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+    else
+        cp "$HOOKS_FILE" "$CLAUDE_SETTINGS"
+    fi
+    echo "✓ claude hooks → ~/.claude/settings.json"
+fi
 
 echo ""
 echo "done — restart kitty and source your shell config"

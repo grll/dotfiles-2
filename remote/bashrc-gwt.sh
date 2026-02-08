@@ -1,6 +1,9 @@
 # ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
+# Disable Claude Code auto title (we set it via hooks)
+export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+
 # ── PR cache for tab titles ──
 __pr_cache_dir="$HOME/.cache/tab-title"
 __pr_cache_stale=300  # 5 minutes

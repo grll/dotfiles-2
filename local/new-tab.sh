@@ -5,14 +5,18 @@ export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
 # Get window info from focused tab
+# Use foreground_processes[0].cwd for accurate local cwd
 window_info=$(kitten @ ls | jq -r '
   .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
   (.windows[] | select(.is_self == false)) // .windows[0] |
-  "\(.user_vars.is_remote // "")|\(.user_vars.remote_cwd // "")"
+  (.foreground_processes[0].cwd // .cwd) as $local_cwd |
+  "\(.user_vars.is_remote // "")|\(.user_vars.remote_cwd // "")|\($local_cwd)"
 ')
 
 is_remote="${window_info%%|*}"
-remote_cwd="${window_info#*|}"
+rest="${window_info#*|}"
+remote_cwd="${rest%%|*}"
+local_cwd="${rest##*|}"
 
 # Fallback for legacy remote tabs (have remote_cwd but no is_remote)
 if [[ -z "$is_remote" && -n "$remote_cwd" ]]; then
@@ -27,6 +31,6 @@ if [[ "$is_remote" == "1" ]]; then
     fi
     kitten @ launch --type=tab -- kitten ssh "$CLUSTER" -t "cd '$remote_cwd' && exec \$SHELL -l"
 else
-    # Local: create new tab in current directory
-    kitten @ launch --type=tab --cwd=current
+    # Local: use foreground process cwd (more reliable than kitty's --cwd=current)
+    kitten @ launch --type=tab --cwd="$local_cwd"
 fi

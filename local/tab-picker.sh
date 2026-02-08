@@ -10,11 +10,13 @@ export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
 # Get info about the underlying window (not the overlay itself)
+# Use foreground_processes[0].cwd for accurate local cwd (more reliable than .cwd)
 _get_focused_window() {
     kitten @ ls | jq -r '
       .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
       (.windows[] | select(.is_self == false)) // .windows[0] |
-      "\(.user_vars.is_remote // "")|\(.cwd)|\(.user_vars.remote_cwd // "")"
+      (.foreground_processes[0].cwd // .cwd) as $local_cwd |
+      "\(.user_vars.is_remote // "")|\($local_cwd)|\(.user_vars.remote_cwd // "")"
     '
 }
 
