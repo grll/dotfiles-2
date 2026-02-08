@@ -29,16 +29,21 @@ get_pr() {
     [[ -f "$cache" ]] && cat "$cache"
 }
 
+# Output to /dev/tty to bypass Claude's stdout capture
+set_title() {
+    printf '\033]0;%s\007' "$1" > /dev/tty 2>/dev/null || true
+}
+
 case "$event" in
     SessionStart)
         if [[ -n "$branch" && "$branch" != "HEAD" ]]; then
             title=$(format_branch "$branch")
             pr=$(get_pr "$branch")
             [[ -n "$pr" && "$pr" != "0" ]] && title="$title #$pr"
-            printf '\033]0;CC: %s\007' "$title"
+            set_title "CC: $title"
         else
             # Fallback: show directory name
-            printf '\033]0;CC: %s\007' "$(basename "$cwd")"
+            set_title "CC: $(basename "$cwd")"
         fi
         ;;
 
@@ -50,12 +55,12 @@ case "$event" in
             [[ -n "$pr" && "$pr" != "0" ]] && title="$title #$pr"
             # Remote: prefix with cluster, Local: just title
             if [[ -n "${CLUSTER:-}" ]]; then
-                printf '\033]0;%s:%s\007' "$CLUSTER" "$title"
+                set_title "$CLUSTER:$title"
             else
-                printf '\033]0;%s\007' "$title"
+                set_title "$title"
             fi
         else
-            printf '\033]0;%s\007' "$(basename "$cwd")"
+            set_title "$(basename "$cwd")"
         fi
         ;;
 esac
