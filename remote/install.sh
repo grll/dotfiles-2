@@ -28,6 +28,22 @@ rm -rf "$HOME/.claude/skills"
 ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
 echo "ok claude skills → ~/.claude/skills"
 
+# claude code hooks (merge into existing settings)
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+HOOKS_FILE="$DIR/claude-hooks.json"
+if [[ -f "$HOOKS_FILE" ]]; then
+    mkdir -p "$HOME/.claude"
+    if [[ -f "$CLAUDE_SETTINGS" ]]; then
+        # Merge hooks into existing settings
+        jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$HOOKS_FILE" > "$CLAUDE_SETTINGS.tmp"
+        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+    else
+        # No existing settings, just copy hooks
+        cp "$HOOKS_FILE" "$CLAUDE_SETTINGS"
+    fi
+    echo "ok claude hooks → ~/.claude/settings.json"
+fi
+
 # checks
 echo ""
 command -v fzf &>/dev/null || echo "!! install fzf: sudo apt install fzf"
