@@ -244,12 +244,12 @@ _checkout_pr() {
     if [[ "$wt_exists" == "0" ]]; then
         if [[ "$is_remote" == "1" ]]; then
             ssh "$CLUSTER" "git -C '$main_repo' fetch origin '$branch'"
-            ssh "$CLUSTER" "git -C '$main_repo' worktree add '$wt_path' 'origin/$branch'"
+            ssh "$CLUSTER" "git -C '$main_repo' worktree add -b '$branch' '$wt_path' 'origin/$branch'"
             ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
             ssh "$CLUSTER" "[[ -d '$main_repo/.claude' ]] && ln -s '$main_repo/.claude' '$wt_path/.claude'" || true
         else
             git -C "$main_repo" fetch origin "$branch"
-            git -C "$main_repo" worktree add "$wt_path" "origin/$branch"
+            git -C "$main_repo" worktree add -b "$branch" "$wt_path" "origin/$branch"
             [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
             [[ -d "$main_repo/.claude" ]] && ln -s "$main_repo/.claude" "$wt_path/.claude" || true
         fi
