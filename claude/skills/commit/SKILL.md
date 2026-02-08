@@ -115,3 +115,5 @@ git commit -m "<type>[scope]: <description>"
 ```
 
 Do NOT use `--no-verify` unless explicitly requested by the user.
+
+**IMPORTANT:** Do NOT add any `Co-Authored-By` or similar trailers to the commit message.

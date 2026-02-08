@@ -93,7 +93,7 @@ Examples:
 - `fix bug`
 - `WIP`
 
-If there is a BREAKING CHANGE, append `!` after the type/scope: `feat(api)!: redesign pagination response format`
+If there is a BREAKING CHANGE, append an exclamation mark after the type/scope, like `feat(api)!: redesign pagination response format`
 
 ## Step 4: Write the PR description
 
@@ -217,6 +217,7 @@ gh pr create \
 Important:
 - Pass `--base` with the target branch.
 - Do NOT use `--fill` — always provide an explicit `--title` and `--body`.
+- Do NOT add any `Co-Authored-By` trailers or similar attribution to the PR description.
 - Write the body to a temp file and use `--body-file` if the description is long or contains characters that are hard to escape in shell:
   ```
   gh pr create --base <target-branch> --title "<title>" --body-file /tmp/pr-body.md
