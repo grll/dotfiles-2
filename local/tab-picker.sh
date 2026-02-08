@@ -268,4 +268,7 @@ if [[ "$key" == "alt-enter" && -n "$query" ]]; then
     fi
 elif [[ -n "$sel_path" ]]; then
     _go "$sel_path" "$(cut -d'|' -f1 <<< "$selection")"
+elif [[ -n "$query" ]]; then
+    echo "No match. Did you mean Alt+Enter to create '$query'?"
+    read -n1 -p "Press any key..."
 fi
