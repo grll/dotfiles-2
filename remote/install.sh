@@ -23,6 +23,11 @@ else
     echo "ok appended shell utilities to .bashrc"
 fi
 
+# claude code skills
+rm -rf "$HOME/.claude/skills"
+ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
+echo "ok claude skills → ~/.claude/skills"
+
 # checks
 echo ""
 command -v fzf &>/dev/null || echo "!! install fzf: sudo apt install fzf"

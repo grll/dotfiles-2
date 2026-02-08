@@ -68,5 +68,10 @@ forward_remote_control yes
 EOF
 echo "✓ ssh.conf → ~/.config/kitty/ssh.conf"
 
+# claude code skills
+rm -rf "$HOME/.claude/skills"
+ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
+echo "✓ claude skills → ~/.claude/skills"
+
 echo ""
 echo "done — restart kitty and source your shell config"
