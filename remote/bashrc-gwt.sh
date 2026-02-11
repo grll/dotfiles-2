@@ -126,6 +126,26 @@ vsc() {
     fi
 }
 
+# ── vsc-pr: open PR in VS Code's GitHub PR extension ──
+vsc-pr() {
+    local pr_url
+    pr_url=$(gh pr view --json url -q '.url' 2>/dev/null)
+    if [[ -z "$pr_url" ]]; then
+        echo "error: no PR found for current branch" >&2
+        return 1
+    fi
+
+    if [[ -n "$SSH_CONNECTION" ]]; then
+        if ! kitten @ ls &>/dev/null; then
+            echo "error: kitty remote control not available (use kitten ssh)" >&2
+            return 1
+        fi
+        kitten @ launch --type=background -- open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
+    else
+        open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
+    fi
+}
+
 # ── Command shortcuts ─────────────────────────────────
 alias cld='claude'
 
