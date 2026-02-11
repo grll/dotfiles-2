@@ -7,15 +7,21 @@ export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
 vsc() {
     local branch="${1:?usage: vsc <branch>}"
     local sanitized="${branch//[\/.]/-}"
-    code --remote "ssh-remote+${CLUSTER}" "${REMOTE_REPO}-${sanitized}"
+    local remote_dir="${REMOTE_REPO}-${sanitized}"
 
-    # Check for PR and open it in VS Code's GitHub PR extension
-    local pr_url
-    pr_url=$(gh pr view "$branch" --json url -q '.url' 2>/dev/null)
-    if [[ -n "$pr_url" ]]; then
-        sleep 1  # Give VS Code time to initialize
-        open "vscode://github.vscode-pull-request-github/open-pull-request-changes?uri=${pr_url}"
-    fi
+    code --remote "ssh-remote+${CLUSTER}" "$remote_dir"
+
+    # Check for PR on remote and open it in VS Code's GitHub PR extension
+    # Run in background to avoid blocking the terminal
+    (
+        # Query PR from the remote repository
+        local pr_url
+        pr_url=$(ssh "${CLUSTER}" "cd '$remote_dir' && gh pr view --json url -q '.url'" 2>/dev/null)
+        if [[ -n "$pr_url" ]]; then
+            sleep 5  # Give VS Code time to connect to remote
+            open "vscode://github.vscode-pull-request-github/open-pull-request-changes?uri=${pr_url}"
+        fi
+    ) &
 }
 
 # ── gwt: worktree management (local mode) ────────────
