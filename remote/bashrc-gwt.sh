@@ -111,9 +111,10 @@ fi
 # Clean up any double semicolons from other scripts (pure.bash + zoxide issue)
 PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
 
-# ── vsc: open VS Code (works locally and remotely) ──
+# ── vsc: open VS Code (works locally and remotely, PR-aware) ──
 vsc() {
     local dir="${1:-$(pwd)}"
+
     if [[ -n "$SSH_CONNECTION" ]]; then
         if ! kitten @ ls &>/dev/null; then
             echo "error: kitty remote control not available (use kitten ssh)" >&2
@@ -121,28 +122,26 @@ vsc() {
         fi
         # Use full path since kitty background doesn't have user's PATH
         kitten @ launch --type=background -- /opt/homebrew/bin/code --remote "ssh-remote+${CLUSTER}" "$dir"
+
+        # Check for PR and open it after VS Code connects (in background)
+        (
+            local pr_url
+            pr_url=$(gh pr view --json url -q '.url' 2>/dev/null)
+            if [[ -n "$pr_url" ]]; then
+                echo "PR detected, will open after VS Code connects..."
+                sleep 8  # Give VS Code time to connect to remote
+                kitten @ launch --type=background -- open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
+            fi
+        ) &
     else
         code "$dir"
-    fi
-}
-
-# ── vsc-pr: open PR in VS Code's GitHub PR extension ──
-vsc-pr() {
-    local pr_url
-    pr_url=$(gh pr view --json url -q '.url' 2>/dev/null)
-    if [[ -z "$pr_url" ]]; then
-        echo "error: no PR found for current branch" >&2
-        return 1
-    fi
-
-    if [[ -n "$SSH_CONNECTION" ]]; then
-        if ! kitten @ ls &>/dev/null; then
-            echo "error: kitty remote control not available (use kitten ssh)" >&2
-            return 1
+        # Check for PR locally
+        local pr_url
+        pr_url=$(gh pr view --json url -q '.url' 2>/dev/null)
+        if [[ -n "$pr_url" ]]; then
+            sleep 2
+            open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
         fi
-        kitten @ launch --type=background -- open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
-    else
-        open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
     fi
 }
 
