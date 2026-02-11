@@ -8,6 +8,14 @@ vsc() {
     local branch="${1:?usage: vsc <branch>}"
     local sanitized="${branch//[\/.]/-}"
     code --remote "ssh-remote+${CLUSTER}" "${REMOTE_REPO}-${sanitized}"
+
+    # Check for PR and open it in VS Code's GitHub PR extension
+    local pr_url
+    pr_url=$(gh pr view "$branch" --json url -q '.url' 2>/dev/null)
+    if [[ -n "$pr_url" ]]; then
+        sleep 1  # Give VS Code time to initialize
+        open "vscode://github.vscode-pull-request-github/open-pull-request-changes?uri=${pr_url}"
+    fi
 }
 
 # ── gwt: worktree management (local mode) ────────────
