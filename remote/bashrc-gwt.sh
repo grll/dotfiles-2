@@ -1,9 +1,6 @@
 # ── shell utilities for remote sessions ──
 [[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
 
-# Add dotfiles bin to PATH
-export PATH="$HOME/dotfiles/remote/bin:$PATH"
-
 # Disable Claude Code auto title (we set it via hooks)
 export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
 

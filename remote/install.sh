@@ -23,6 +23,15 @@ else
     echo "ok appended shell utilities to .bashrc"
 fi
 
+# bin scripts → ~/.local/bin
+mkdir -p "$HOME/.local/bin"
+for script in "$DIR/bin/"*; do
+    [[ -f "$script" ]] || continue
+    name="$(basename "$script")"
+    ln -sf "$script" "$HOME/.local/bin/$name"
+    echo "ok $name → ~/.local/bin/$name"
+done
+
 # claude code skills
 rm -rf "$HOME/.claude/skills"
 ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
