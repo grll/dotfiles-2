@@ -124,3 +124,8 @@ notify() {
         echo ":: ${msg}" >&2
     fi
 }
+
+# ── SLURM shortcuts ──
+h100() {
+    srun --qos=dev --partition=h100 --nodes=1 --pty /bin/bash "$@"
+}
