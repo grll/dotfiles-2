@@ -10,23 +10,6 @@ vsc() {
     code --remote "ssh-remote+${CLUSTER}" "${REMOTE_REPO}-${sanitized}"
 }
 
-# Open PR in VS Code's GitHub PR extension (run after vsc when VS Code is connected)
-vsc-pr() {
-    local branch="${1:?usage: vsc-pr <branch>}"
-    local sanitized="${branch//[\/.]/-}"
-    local remote_dir="${REMOTE_REPO}-${sanitized}"
-
-    local pr_url
-    pr_url=$(ssh "${CLUSTER}" "cd '$remote_dir' && gh pr view --json url -q '.url'" 2>/dev/null)
-    if [[ -n "$pr_url" ]]; then
-        # checkout-pull-request opens the PR description view
-        open "vscode://github.vscode-pull-request-github/checkout-pull-request?uri=${pr_url}"
-    else
-        echo "No PR found for branch: $branch" >&2
-        return 1
-    fi
-}
-
 # ── gwt: worktree management (local mode) ────────────
 gwt() {
     local out
