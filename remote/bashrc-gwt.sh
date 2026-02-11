@@ -113,6 +113,7 @@ PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
 
 # ── Command shortcuts ─────────────────────────────────
 alias cld='claude'
+alias uvsa='uv sync --all-groups --all-extras --all-sync'
 
 # ── notify: send macOS notification via kitty remote control ──
 notify() {

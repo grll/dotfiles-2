@@ -42,3 +42,4 @@ alias rno='kitten ssh rno'
 
 # ── Command shortcuts ─────────────────────────────────
 alias cld='claude'
+alias uvsa='uv sync --all-groups --all-extras --all-sync'
