@@ -28,7 +28,7 @@ sound_path="$SOUNDS_DIR/$sound"
 [[ ! -f "$sound_path" ]] && exit 0
 
 if [[ -n "$SSH_TTY" ]]; then
-    kitten @ launch --type=background -- /opt/homebrew/bin/afplay "$sound_path" 2>/dev/null
+    kitten @ launch --type=background -- /usr/bin/afplay "$sound_path" 2>/dev/null
 else
     afplay "$sound_path" &
 fi
