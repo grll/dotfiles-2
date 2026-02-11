@@ -14,4 +14,5 @@ case "$type" in
     *) msg="$type in $dir" ;;
 esac
 
-printf '\e]99;;%s\e\\' "$msg" > "$SSH_TTY"
+# Silent notification (s=c2lsZW50 is Base64 for "silent")
+printf '\e]99;s=c2lsZW50;;%s\e\\' "$msg" > "$SSH_TTY"

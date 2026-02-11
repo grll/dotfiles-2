@@ -4,10 +4,24 @@
       {
         "matcher": "",
         "hooks": [
-          {
-            "type": "command",
-            "command": "~/dotfiles/remote/claude-notify.sh"
-          }
+          { "type": "command", "command": "~/dotfiles/remote/claude-notify.sh" },
+          { "type": "command", "command": "~/dotfiles/claude/claude-sound.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "~/dotfiles/claude/claude-sound.sh" }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "~/dotfiles/claude/claude-sound.sh" }
         ]
       }
     ]
