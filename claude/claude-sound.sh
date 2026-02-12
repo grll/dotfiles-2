@@ -1,6 +1,9 @@
 #!/bin/bash
 # Play Peon sounds for Claude Code events
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/../config.sh" 2>/dev/null || true
+
 SOUNDS_DIR="$HOME/dotfiles/sounds"
 
 input=$(cat)
@@ -28,7 +31,8 @@ sound_path="$SOUNDS_DIR/$sound"
 [[ ! -f "$sound_path" ]] && exit 0
 
 if [[ -n "$SSH_TTY" ]]; then
-    kitten @ launch --type=background -- /usr/bin/afplay "$sound_path" 2>/dev/null
+    local_sound_path="${LOCAL_HOME}/dotfiles/sounds/$sound"
+    kitten @ launch --type=background -- /usr/bin/afplay "$local_sound_path" 2>/dev/null
 else
     afplay "$sound_path" &
 fi
