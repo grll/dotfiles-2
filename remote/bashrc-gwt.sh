@@ -1,8 +1,5 @@
 # ── shell utilities for remote sessions ──
-[[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
-
-# Disable Claude Code auto title (we set it via hooks)
-export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+source "$HOME/dotfiles/shared/aliases.sh"
 
 # ── PR cache for tab titles ──
 __pr_cache_dir="$HOME/.cache/tab-title"
@@ -41,17 +38,7 @@ __refresh_pr_cache() {
 }
 
 # ── Smart title: cluster:branch #PR or cluster:~/path ──
-__format_branch() {
-    local branch="$1"
-    # Strip user/ prefix if present
-    branch="${branch#*/}"
-    # Check for Linear ticket pattern (e.g., sol-3295-description)
-    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
-        echo "${BASH_REMATCH[1]^^}"  # Uppercase ticket ID
-    else
-        echo "$branch"
-    fi
-}
+source "$HOME/dotfiles/shared/format-branch.sh"
 
 __set_title() {
     local cluster="${CLUSTER:-${HOSTNAME%%.*}}"
@@ -82,7 +69,7 @@ __set_title() {
 
         if [[ -n "$branch" ]]; then
             # Format branch name
-            title=$(__format_branch "$branch")
+            title=$(format_branch "$branch")
 
             # Add PR number if cached
             local pr_num=$(__get_pr_number "$branch")
@@ -110,12 +97,6 @@ fi
 
 # Clean up any double semicolons from other scripts (pure.bash + zoxide issue)
 PROMPT_COMMAND="${PROMPT_COMMAND//;;/;}"
-
-# ── Command shortcuts ─────────────────────────────────
-alias cld='claude'
-alias deepwiki-on='claude mcp add -t http deepwiki https://mcp.deepwiki.com/mcp'
-alias deepwiki-off='claude mcp remove deepwiki'
-alias uvsa='uv sync --all-packages --all-groups --all-extras'
 
 # ── notify: send macOS notification via kitty remote control ──
 notify() {

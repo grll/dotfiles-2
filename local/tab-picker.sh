@@ -9,27 +9,8 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get info about the underlying window (not the overlay itself)
-# Use foreground_processes[0].cwd for accurate local cwd (more reliable than .cwd)
-_get_focused_window() {
-    kitten @ ls | jq -r '
-      .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-      (.windows[] | select(.is_self == false)) // .windows[0] |
-      (.foreground_processes[0].cwd // .cwd) as $local_cwd |
-      "\(.user_vars.is_remote // "")|\($local_cwd)|\(.user_vars.remote_cwd // "")"
-    '
-}
-
-# Format branch for smart title (same logic as bashrc-gwt.sh)
-_format_branch() {
-    local branch="$1"
-    branch="${branch#*/}"  # Strip user/ prefix
-    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
-        echo "${BASH_REMATCH[1]^^}"
-    else
-        echo "$branch"
-    fi
-}
+source ~/dotfiles/shared/window-info.sh
+source ~/dotfiles/shared/format-branch.sh
 
 # Detect if we're in remote context
 _is_remote() {
@@ -93,7 +74,7 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 # Main flow
-window_info=$(_get_focused_window)
+window_info=$(get_focused_window)
 is_remote_var="${window_info%%|*}"
 rest="${window_info#*|}"
 focused_cwd="${rest%%|*}"
@@ -166,7 +147,7 @@ _go() {
             local ref=$(ssh "$CLUSTER" "git -C '$path' describe --all --exact-match HEAD 2>/dev/null") || ref=""
             [[ "$ref" == remotes/origin/* ]] && branch="${ref#remotes/origin/}"
         fi
-        smart_title=$(_format_branch "${branch:-$name}")
+        smart_title=$(format_branch "${branch:-$name}")
 
         # Try var:worktree first, then create new tab
         # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
