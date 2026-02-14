@@ -13,14 +13,14 @@ fi
 # bashrc (idempotent)
 MARKER="# ── shell utilities for remote sessions"
 if grep -q "$MARKER" "$HOME/.bashrc" 2>/dev/null; then
-    echo "ok .bashrc already configured"
+    echo "✓ .bashrc already configured"
 else
     {
         echo ""
         echo "$MARKER ───────────────"
         echo 'source "$HOME/dotfiles/remote/bashrc-gwt.sh"'
     } >> "$HOME/.bashrc"
-    echo "ok appended shell utilities to .bashrc"
+    echo "✓ appended shell utilities to .bashrc"
 fi
 
 # bin scripts → ~/.local/bin
@@ -29,13 +29,13 @@ for script in "$DIR/bin/"*; do
     [[ -f "$script" ]] || continue
     name="$(basename "$script")"
     ln -sf "$script" "$HOME/.local/bin/$name"
-    echo "ok $name → ~/.local/bin/$name"
+    echo "✓ $name → ~/.local/bin/$name"
 done
 
 # claude code skills
 rm -rf "$HOME/.claude/skills"
 ln -s "$DIR/../claude/skills" "$HOME/.claude/skills"
-echo "ok claude skills → ~/.claude/skills"
+echo "✓ claude skills → ~/.claude/skills"
 
 # claude code hooks (merge shared + remote-specific into settings)
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
@@ -51,7 +51,7 @@ else
     # No existing settings - merge shared + remote
     jq -s '.[0] * .[1]' "$SHARED_HOOKS" "$REMOTE_HOOKS" > "$CLAUDE_SETTINGS"
 fi
-echo "ok claude hooks → ~/.claude/settings.json"
+echo "✓ claude hooks → ~/.claude/settings.json"
 
 # checks
 echo ""
