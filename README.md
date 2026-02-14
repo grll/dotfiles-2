@@ -1,6 +1,6 @@
 # dotfiles
 
-Kitty + tmux + git-worktree workflow for a remote dev cluster, with Claude Code integration.
+Kitty + git-worktree workflow for a remote dev cluster, with Claude Code integration.
 
 **Kitty opens 4 tabs:** home, slack, notion, linear.
 `Cmd+G` picks git worktrees as new tabs (local or remote via SSH). `vsc` opens VS Code on the remote. `notify` sends macOS notifications from remote. Claude Code hooks provide tab titles, desktop notifications, and Peon sound effects.
@@ -36,7 +36,6 @@ Kitty prerequisite: `~/.config/kitty/kitty.conf` must exist (create empty if nee
 |---|---|---|
 | 4-tab kitty startup | `kitty-dotfiles.conf` → `startup_session sessions/work.conf` | local |
 | `kitten ssh` to cluster | `ssh.conf` — shell integration, clipboard, terminfo, remote control | local→remote |
-| Tmux auto-attach on SSH | `bashrc-gwt.sh` — attaches/creates `main` session | remote |
 | `Cmd+G` worktree picker | `tab-picker.sh` — fzf picker, opens worktree in a new tab (local or remote) | local |
 | `Cmd+T` smart new tab | `new-tab.sh` — new tab in same dir, works for local and remote tabs | local |
 | `gwt` worktree manager | `gwt <branch>`, `gwt -b`, `gwt -d`, `gwt -l` | both |
@@ -73,7 +72,7 @@ local/
   ssh.conf                 # template — install.sh generates with $CLUSTER
 remote/
   install.sh               # remote setup: bashrc, bin scripts, claude
-  bashrc-gwt.sh            # tmux auto-attach, smart titles, gwt, vsc, notify, aliases
+  bashrc-gwt.sh            # smart titles, gwt, vsc, notify, aliases
   bin/vsc                  # VS Code launcher with PR auto-open
   claude-hooks.json        # remote-specific hooks (notify + sound over SSH)
   claude-notify.sh         # remote notifications via OSC 99 escape sequence
