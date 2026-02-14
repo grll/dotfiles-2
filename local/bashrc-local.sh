@@ -40,15 +40,8 @@ fi
 # ── SSH shortcuts ─────────────────────────────────────
 alias rno='kitten ssh rno'
 
-# ── MCP on-demand ─────────────────────────────────────
-mcp() {
-    case "$1" in
-        on)  claude mcp add -s user "${2:?usage: mcp on <name>}" -- "${@:3}" ;;
-        off) claude mcp remove -s user "${2:?usage: mcp off <name>}" ;;
-        *)   echo "usage: mcp on|off <name> [-- args...]" >&2; return 1 ;;
-    esac
-}
-
 # ── Command shortcuts ─────────────────────────────────
 alias cld='claude'
+alias deepwiki-on='claude mcp add -t http deepwiki https://mcp.deepwiki.com/mcp'
+alias deepwiki-off='claude mcp remove deepwiki'
 alias uvsa='uv sync --all-packages --all-groups --all-extras'
