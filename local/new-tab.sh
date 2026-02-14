@@ -3,20 +3,13 @@
 set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
+source ~/dotfiles/shared/window-info.sh
 
-# Get window info from focused tab
-# Use foreground_processes[0].cwd for accurate local cwd
-window_info=$(kitten @ ls | jq -r '
-  .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-  (.windows[] | select(.is_self == false)) // .windows[0] |
-  (.foreground_processes[0].cwd // .cwd) as $local_cwd |
-  "\(.user_vars.is_remote // "")|\(.user_vars.remote_cwd // "")|\($local_cwd)"
-')
-
+window_info=$(get_focused_window)
 is_remote="${window_info%%|*}"
 rest="${window_info#*|}"
-remote_cwd="${rest%%|*}"
-local_cwd="${rest##*|}"
+local_cwd="${rest%%|*}"
+remote_cwd="${rest#*|}"
 
 # Fallback for legacy remote tabs (have remote_cwd but no is_remote)
 if [[ -z "$is_remote" && -n "$remote_cwd" ]]; then

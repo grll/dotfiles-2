@@ -9,17 +9,7 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
 
-# Get info about the underlying window (not the overlay itself)
-# Use foreground_processes[0].cwd for accurate local cwd (more reliable than .cwd)
-_get_focused_window() {
-    kitten @ ls | jq -r '
-      .[] | select(.is_focused) | .tabs[] | select(.is_focused) |
-      (.windows[] | select(.is_self == false)) // .windows[0] |
-      (.foreground_processes[0].cwd // .cwd) as $local_cwd |
-      "\(.user_vars.is_remote // "")|\($local_cwd)|\(.user_vars.remote_cwd // "")"
-    '
-}
-
+source ~/dotfiles/shared/window-info.sh
 source ~/dotfiles/shared/format-branch.sh
 
 # Detect if we're in remote context
@@ -84,7 +74,7 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 # Main flow
-window_info=$(_get_focused_window)
+window_info=$(get_focused_window)
 is_remote_var="${window_info%%|*}"
 rest="${window_info#*|}"
 focused_cwd="${rest%%|*}"
