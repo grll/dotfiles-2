@@ -1,8 +1,7 @@
-# ── vsc: open VS Code on remote worktree ─────────────
-[[ -f "$HOME/dotfiles/config.sh" ]] && source "$HOME/dotfiles/config.sh"
+# ── Shared aliases & config ───────────────────────────
+source "$HOME/dotfiles/shared/aliases.sh"
 
-# Disable Claude Code auto title (we set it via hooks)
-export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
+# ── vsc: open VS Code on remote worktree ─────────────
 
 vsc() {
     local branch="${1:?usage: vsc <branch>}"
@@ -39,9 +38,3 @@ fi
 
 # ── SSH shortcuts ─────────────────────────────────────
 alias rno='kitten ssh rno'
-
-# ── Command shortcuts ─────────────────────────────────
-alias cld='claude'
-alias deepwiki-on='claude mcp add -t http deepwiki https://mcp.deepwiki.com/mcp'
-alias deepwiki-off='claude mcp remove deepwiki'
-alias uvsa='uv sync --all-packages --all-groups --all-extras'
