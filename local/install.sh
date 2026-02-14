@@ -40,6 +40,10 @@ mkdir -p "$HOME/.local/bin"
 ln -sf "$DIR/../remote/gwt" "$HOME/.local/bin/gwt"
 echo "✓ gwt → ~/.local/bin/gwt"
 
+# spawn-agent
+ln -sf "$DIR/spawn-agent.sh" "$HOME/.local/bin/spawn-agent"
+echo "✓ spawn-agent → ~/.local/bin/spawn-agent"
+
 # gwt completion
 mkdir -p "$HOME/.local/share/gwt"
 ln -sf "$DIR/../remote/gwt-completion.bash" "$HOME/.local/share/gwt/gwt-completion.bash"
