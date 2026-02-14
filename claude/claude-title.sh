@@ -11,16 +11,7 @@ cd "$cwd" 2>/dev/null || exit 0
 # Get branch info
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-# Format branch (extract ticket ID like SOL-3295)
-format_branch() {
-    local b="$1"
-    b="${b#*/}"  # Strip user/ prefix
-    if [[ "$b" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
-        echo "${BASH_REMATCH[1]^^}"
-    else
-        echo "$b"
-    fi
-}
+source "$HOME/dotfiles/shared/format-branch.sh"
 
 # Get cached PR number (non-blocking)
 get_pr() {

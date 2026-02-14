@@ -38,17 +38,7 @@ __refresh_pr_cache() {
 }
 
 # ── Smart title: cluster:branch #PR or cluster:~/path ──
-__format_branch() {
-    local branch="$1"
-    # Strip user/ prefix if present
-    branch="${branch#*/}"
-    # Check for Linear ticket pattern (e.g., sol-3295-description)
-    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
-        echo "${BASH_REMATCH[1]^^}"  # Uppercase ticket ID
-    else
-        echo "$branch"
-    fi
-}
+source "$HOME/dotfiles/shared/format-branch.sh"
 
 __set_title() {
     local cluster="${CLUSTER:-${HOSTNAME%%.*}}"
@@ -79,7 +69,7 @@ __set_title() {
 
         if [[ -n "$branch" ]]; then
             # Format branch name
-            title=$(__format_branch "$branch")
+            title=$(format_branch "$branch")
 
             # Add PR number if cached
             local pr_num=$(__get_pr_number "$branch")

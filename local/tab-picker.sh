@@ -20,16 +20,7 @@ _get_focused_window() {
     '
 }
 
-# Format branch for smart title (same logic as bashrc-gwt.sh)
-_format_branch() {
-    local branch="$1"
-    branch="${branch#*/}"  # Strip user/ prefix
-    if [[ "$branch" =~ ^([a-zA-Z]+-[0-9]+) ]]; then
-        echo "${BASH_REMATCH[1]^^}"
-    else
-        echo "$branch"
-    fi
-}
+source ~/dotfiles/shared/format-branch.sh
 
 # Detect if we're in remote context
 _is_remote() {
@@ -166,7 +157,7 @@ _go() {
             local ref=$(ssh "$CLUSTER" "git -C '$path' describe --all --exact-match HEAD 2>/dev/null") || ref=""
             [[ "$ref" == remotes/origin/* ]] && branch="${ref#remotes/origin/}"
         fi
-        smart_title=$(_format_branch "${branch:-$name}")
+        smart_title=$(format_branch "${branch:-$name}")
 
         # Try var:worktree first, then create new tab
         # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
