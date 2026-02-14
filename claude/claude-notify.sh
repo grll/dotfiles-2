@@ -1,8 +1,8 @@
 #!/bin/bash
-# Send silent notification for local Claude Code events using kitten notify
-# Remote uses remote/claude-notify.sh with Kitty OSC 99
-
-[[ -n "$SSH_TTY" ]] && exit 0  # Skip on remote (handled by remote/claude-notify.sh)
+# Send silent notification for Claude Code events
+# Detects context (local vs SSH) and uses the appropriate delivery mechanism:
+# - Local: kitten notify
+# - Remote (SSH): Kitty OSC 99 escape sequences
 
 input=$(cat)
 hook_event=$(echo "$input" | jq -r '.hook_event_name // ""')
@@ -28,5 +28,10 @@ case "$hook_event" in
         ;;
 esac
 
-# Silent notification using kitten notify (--sound silent suppresses system sound)
-kitten notify --sound silent "Claude Code" "$msg"
+if [[ -n "$SSH_TTY" ]]; then
+    # Silent notification via Kitty OSC 99 (s=c2lsZW50 is Base64 for "silent")
+    printf '\e]99;s=c2lsZW50;;%s\e\\' "$msg" > "$SSH_TTY"
+else
+    # Silent notification using kitten notify (--sound silent suppresses system sound)
+    kitten notify --sound silent "Claude Code" "$msg"
+fi
