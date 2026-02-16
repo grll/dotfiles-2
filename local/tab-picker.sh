@@ -93,6 +93,7 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 # Main flow
+launch_type="${1:-tab}"
 window_info=$(_get_focused_window)
 is_remote_var="${window_info%%|*}"
 rest="${window_info#*|}"
@@ -171,12 +172,12 @@ _go() {
         # Try var:worktree first, then create new OS window
         # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
         kitten @ focus-window --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ launch --type=os-window --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+          || kitten @ launch --type="$launch_type" --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
         # Try var:worktree first, then fall back to cwd matching for manually-created windows
         kitten @ focus-window --match "var:worktree=$path" 2>/dev/null \
           || kitten @ focus-window --match "cwd:$path" 2>/dev/null \
-          || kitten @ launch --type=os-window --tab-title "$name" --var "worktree=$path" --cwd="$path"
+          || kitten @ launch --type="$launch_type" --tab-title "$name" --var "worktree=$path" --cwd="$path"
     fi
 }
 
@@ -211,10 +212,12 @@ _create_worktree() {
         ssh "$CLUSTER" "git -C '$main_repo' worktree add -b '$branch' '$wt_path' '$base'"
         ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
         ssh "$CLUSTER" "[[ -d '$main_repo/.claude' ]] && ln -s '$main_repo/.claude' '$wt_path/.claude'" || true
+        ssh "$CLUSTER" "[[ -f '$main_repo/CLAUDE.local.md' ]] && ln -s '$main_repo/CLAUDE.local.md' '$wt_path/CLAUDE.local.md'" || true
     else
         git -C "$main_repo" worktree add -b "$branch" "$wt_path" "$base"
         [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
         [[ -d "$main_repo/.claude" ]] && ln -s "$main_repo/.claude" "$wt_path/.claude" || true
+        [[ -f "$main_repo/CLAUDE.local.md" ]] && ln -s "$main_repo/CLAUDE.local.md" "$wt_path/CLAUDE.local.md" || true
     fi
     _go "$wt_path" "${branch//[\/.]/-}"
 }
@@ -253,11 +256,13 @@ _checkout_pr() {
             ssh "$CLUSTER" "git -C '$main_repo' worktree add -b '$branch' '$wt_path' 'origin/$branch'"
             ssh "$CLUSTER" "[[ -d '$main_repo/.venv' ]] && ln -s '$main_repo/.venv' '$wt_path/.venv'" || true
             ssh "$CLUSTER" "[[ -d '$main_repo/.claude' ]] && ln -s '$main_repo/.claude' '$wt_path/.claude'" || true
+            ssh "$CLUSTER" "[[ -f '$main_repo/CLAUDE.local.md' ]] && ln -s '$main_repo/CLAUDE.local.md' '$wt_path/CLAUDE.local.md'" || true
         else
             git -C "$main_repo" fetch origin "$branch"
             git -C "$main_repo" worktree add -b "$branch" "$wt_path" "origin/$branch"
             [[ -d "$main_repo/.venv" ]] && ln -s "$main_repo/.venv" "$wt_path/.venv" || true
             [[ -d "$main_repo/.claude" ]] && ln -s "$main_repo/.claude" "$wt_path/.claude" || true
+            [[ -f "$main_repo/CLAUDE.local.md" ]] && ln -s "$main_repo/CLAUDE.local.md" "$wt_path/CLAUDE.local.md" || true
         fi
     fi
     _go "$wt_path" "${branch//[\/.]/-}"

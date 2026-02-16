@@ -1,8 +1,11 @@
 #!/bin/bash
-# Smart new tab: creates tab in same directory, works for local and remote
+# Smart new tab/window: creates tab or OS window in same directory, works for local and remote
+# Usage: new-tab.sh [tab|os-window]  (default: tab)
 set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 source ~/dotfiles/config.sh 2>/dev/null || true
+
+launch_type="${1:-tab}"
 
 # Get window info from focused tab
 # Use foreground_processes[0].cwd for accurate local cwd
@@ -29,8 +32,8 @@ if [[ "$is_remote" == "1" ]]; then
         # Fallback: prompt will update title on first command
         remote_cwd="~"
     fi
-    kitten @ launch --type=tab -- kitten ssh "$CLUSTER" -t "cd '$remote_cwd' && exec \$SHELL -l"
+    kitten @ launch --type="$launch_type" -- kitten ssh "$CLUSTER" -t "cd '$remote_cwd' && exec \$SHELL -l"
 else
     # Local: use foreground process cwd (more reliable than kitty's --cwd=current)
-    kitten @ launch --type=tab --cwd="$local_cwd"
+    kitten @ launch --type="$launch_type" --cwd="$local_cwd"
 fi

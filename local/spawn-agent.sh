@@ -21,6 +21,7 @@ git -C "$MAIN_REPO" worktree add -b "$BRANCH" "$WT_PATH" "$BASE"
 # Symlink shared directories
 [[ -d "$MAIN_REPO/.venv" ]] && ln -s "$MAIN_REPO/.venv" "$WT_PATH/.venv" || true
 [[ -d "$MAIN_REPO/.claude" ]] && ln -s "$MAIN_REPO/.claude" "$WT_PATH/.claude" || true
+[[ -f "$MAIN_REPO/CLAUDE.local.md" ]] && ln -s "$MAIN_REPO/CLAUDE.local.md" "$WT_PATH/CLAUDE.local.md" || true
 
 # Write TASK.md from stdin if piped
 if [[ ! -t 0 ]]; then
