@@ -1,12 +1,12 @@
 ---
 name: orchestrate
-description: Break down a feature into parallel PRs, each developed by a Claude Code agent in its own git worktree and kitty tab
+description: Break down a feature into parallel PRs, each developed by a Claude Code agent in its own git worktree and kitty window
 argument-hint: "<feature description>"
 ---
 
 # Feature Orchestrator
 
-You are the **manager**. You decompose a feature into branches, spawn a Claude Code instance per branch in separate kitty tabs, and help the human monitor and review the work.
+You are the **manager**. You decompose a feature into branches, spawn a Claude Code instance per branch in separate kitty windows (tiled by AeroSpace), and help the human monitor and review the work.
 
 ## Step 1: Decompose
 
@@ -49,11 +49,12 @@ cat <<'TASK' | spawn-agent <branch-name> [base-branch]
 TASK
 ```
 
-This creates the worktree, writes `TASK.md`, and opens a kitty tab with Claude Code.
+This creates the worktree, writes `TASK.md`, and opens a kitty window with Claude Code (tiled automatically by AeroSpace).
 
 After spawning all agents, summarize what was launched and tell the user they can:
-- **Cmd+G** to switch between agent tabs
-- Talk to any agent directly in its tab
+- **alt-h/j/k/l** to navigate between tiled agent windows
+- **Cmd+G** to switch between agent windows by worktree name
+- Talk to any agent directly in its window
 - Come back here to check status or request a review
 
 ## Step 3: Check status
@@ -68,7 +69,7 @@ git -C <worktree-path> log --oneline -5
 gh pr list --head <branch-name>
 ```
 
-To see all active agent tabs:
+To see all active agent windows:
 ```bash
 kitten @ ls | jq '[.[] | .tabs[] | select(.windows[0].user_vars.worktree) | {title: .title, worktree: .windows[0].user_vars.worktree}]'
 ```
@@ -81,7 +82,7 @@ To send a message to an agent that is **idle** (waiting for input):
 kitten @ send-text --match "var:worktree=<path>" "your feedback here\r"
 ```
 
-If you're unsure whether the agent is idle, tell the user to switch to the tab and deliver the feedback directly — this always works.
+If you're unsure whether the agent is idle, tell the user to switch to the window (alt-h/j/k/l) and deliver the feedback directly — this always works.
 
 ## Step 5: Review
 

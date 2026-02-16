@@ -72,8 +72,8 @@ if [[ "${1:-}" == "--delete" ]]; then
         branch=$(git -C "$path" rev-parse --abbrev-ref HEAD 2>/dev/null) || true
     fi
 
-    # Close any tabs with this worktree
-    kitten @ close-tab --match "var:worktree=$path" 2>/dev/null || true
+    # Close any windows with this worktree
+    kitten @ close-window --match "var:worktree=$path" 2>/dev/null || true
 
     # Remove worktree and branch
     if [[ "$is_remote" == "1" ]]; then
@@ -168,15 +168,15 @@ _go() {
         fi
         smart_title=$(_format_branch "${branch:-$name}")
 
-        # Try var:worktree first, then create new tab
+        # Try var:worktree first, then create new OS window
         # Don't set --tab-title; let the remote shell's __set_title set it (includes PR number)
-        kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ launch --type=tab --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
+        kitten @ focus-window --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ launch --type=os-window --var "worktree=$path" -- kitten ssh "$CLUSTER" -t "cd '$path' && exec \$SHELL -l"
     else
-        # Try var:worktree first, then fall back to cwd matching for manually-created tabs
-        kitten @ focus-tab --match "var:worktree=$path" 2>/dev/null \
-          || kitten @ focus-tab --match "cwd:$path" 2>/dev/null \
-          || kitten @ launch --type=tab --tab-title "$name" --var "worktree=$path" --cwd="$path"
+        # Try var:worktree first, then fall back to cwd matching for manually-created windows
+        kitten @ focus-window --match "var:worktree=$path" 2>/dev/null \
+          || kitten @ focus-window --match "cwd:$path" 2>/dev/null \
+          || kitten @ launch --type=os-window --tab-title "$name" --var "worktree=$path" --cwd="$path"
     fi
 }
 

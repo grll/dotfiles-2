@@ -32,15 +32,16 @@ PROMPT="Read TASK.md and implement the task. Use /commit for commits, /pr when d
 # Launch kitty tab with Claude
 if [[ -n "${SSH_CONNECTION:-}" ]]; then
     # Remote: kitten @ talks to local kitty via forwarded remote control
-    kitten @ launch --type=tab \
+    kitten @ launch --type=os-window \
         --var "worktree=$WT_PATH" \
         -- kitten ssh "$CLUSTER" -t "cd '$WT_PATH' && claude '$PROMPT'"
 else
     # Local: use login shell so PATH includes brew, cargo, etc.
-    kitten @ launch --type=tab \
+    # `; exec zsh` keeps the window open if claude exits unexpectedly
+    kitten @ launch --type=os-window \
         --cwd="$WT_PATH" \
         --var "worktree=$WT_PATH" \
-        -- zsh -lc "claude '$PROMPT'"
+        -- zsh -lic "claude '$PROMPT'; exec zsh"
 fi
 
 echo "Spawned agent in $WT_PATH"
