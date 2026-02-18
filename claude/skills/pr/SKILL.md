@@ -3,6 +3,7 @@ name: pr
 description: Create a GitHub pull request with a well-crafted title and description by analyzing the current branch's changes. Invoke when the user wants to open a PR, submit their work for review, or push and create a pull request.
 argument-hint: "[target-branch]"
 allowed-tools: Bash(git *), Bash(gh *)
+disable-model-invocation: true
 ---
 
 # Create a Pull Request

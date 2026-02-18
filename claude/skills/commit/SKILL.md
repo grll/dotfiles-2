@@ -1,6 +1,7 @@
 ---
 name: commit
 description: Create a git commit following Conventional Commits 1.0.0 specification. Use this skill when the user asks to commit changes, make a commit, or save their work.
+disable-model-invocation: true
 ---
 
 # Commit Command
