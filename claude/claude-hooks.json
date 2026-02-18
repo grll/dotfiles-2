@@ -22,6 +22,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/claude/auto-title.sh"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",

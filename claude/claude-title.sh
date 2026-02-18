@@ -6,6 +6,8 @@ input=$(cat)
 event=$(echo "$input" | jq -r '.hook_event_name // ""')
 cwd=$(echo "$input" | jq -r '.cwd // ""')
 
+session_name=$(echo "$input" | jq -r '.session_name // ""')
+
 cd "$cwd" 2>/dev/null || exit 0
 
 # Get branch info
@@ -36,7 +38,10 @@ set_title() {
 
 case "$event" in
     SessionStart)
-        if [[ -n "$branch" && "$branch" != "HEAD" ]]; then
+        # Prefer session name (set by /rename or auto-title) for resumed sessions
+        if [[ -n "$session_name" ]]; then
+            set_title "CC: $session_name"
+        elif [[ -n "$branch" && "$branch" != "HEAD" ]]; then
             title=$(format_branch "$branch")
             pr=$(get_pr "$branch")
             [[ -n "$pr" && "$pr" != "0" ]] && title="$title #$pr"
