@@ -2,7 +2,6 @@
 name: branch
 description: Create a new git branch with a descriptive name. Takes an optional description to convert into a branch name, or infers the name from current unstaged changes. Invoke when the user wants to create a branch, start a new feature, or begin work on a task.
 argument-hint: "[description of the work]"
-disable-model-invocation: true
 ---
 
 # Create a New Branch

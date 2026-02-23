@@ -3,7 +3,6 @@ name: pr
 description: Create a GitHub pull request with a well-crafted title and description by analyzing the current branch's changes. Invoke when the user wants to open a PR, submit their work for review, or push and create a pull request.
 argument-hint: "[target-branch]"
 allowed-tools: Bash(git *), Bash(gh *)
-disable-model-invocation: true
 ---
 
 # Create a Pull Request
@@ -209,12 +208,14 @@ Use `gh pr create` with the title and body:
 
 ```
 gh pr create \
+  --draft \
   --base <target-branch> \
   --title "<title>" \
   --body "<body>"
 ```
 
 Important:
+- ALWAYS pass `--draft` to create the PR as a draft.
 - Pass `--base` with the target branch.
 - Do NOT use `--fill` — always provide an explicit `--title` and `--body`.
 - Do NOT add any `Co-Authored-By` trailers or similar attribution to the PR description.
